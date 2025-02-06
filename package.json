@@ -17,8 +17,7 @@
 		"analytics": "ts-node ./src/wallet-analytics.ts",
 		"signal": "ts-node ./src/token-heatmap.ts",
 		"test": "ts-node ./src/test.ts",
-		"esbuild": "esbuild",
-		"unbuild": "unbuild"
+		"build": "node ./build.js"
 	},
 	"dependencies": {
 		"@solana/web3.js": "^1.98.0",

@@ -1145,23 +1145,41 @@ async function main() {
     } else if (walletStats.token_num < 3) {
       walletSet.set(wallet, "token\u6570\u91CF\u5C0F\u4E8E3");
     } else {
-      const balance = await getBalance(wallet);
-      if (balance < 2) {
-        const holding = await getHolding({
-          chain: "solana",
-          wallet
-        });
-        const solBalance = holding.data.holding_tokens.reduce(
-          (acc, token) => {
-            if (token.token.symbol === "SOL") {
-              acc += token.balance;
-            }
-            return acc;
-          },
-          0
-        );
-        if (balance + solBalance < 2) {
-          walletSet.set(wallet, "\u4F59\u989D\u5C0F\u4E8E2SOL");
+      let balance;
+      for (let i = 0; i < 5; i++) {
+        try {
+          balance = await getBalance(wallet);
+          break;
+        } catch (error) {
+          if (i === 4) throw error;
+        }
+      }
+      if (balance !== void 0 && balance < 2) {
+        let holding;
+        for (let i = 0; i < 5; i++) {
+          try {
+            holding = await getHolding({
+              chain: "solana",
+              wallet
+            });
+            break;
+          } catch (error) {
+            if (i === 4) throw error;
+          }
+        }
+        if (holding) {
+          const solBalance = holding.data.holding_tokens.reduce(
+            (acc, token) => {
+              if (token.token.symbol === "SOL") {
+                acc += token.balance;
+              }
+              return acc;
+            },
+            0
+          );
+          if (balance + solBalance < 2) {
+            walletSet.set(wallet, "\u4F59\u989D\u5C0F\u4E8E2SOL");
+          }
         }
       }
     }
