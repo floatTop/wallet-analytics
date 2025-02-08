@@ -15,7 +15,8 @@ export const getBalance = async (wallet: string) => {
   });
 
   const data = await response.json();
-  const balanceLamports = data.result.value;
+  const balanceLamports = data?.result?.value || 0;
+ 
   const balanceSol = balanceLamports / 1e9; // 转换为 SOL
   return balanceSol;
 };

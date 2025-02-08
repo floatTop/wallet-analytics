@@ -8,6 +8,10 @@ var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
@@ -24,6 +28,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // node_modules/.pnpm/cli-progress@3.12.0/node_modules/cli-progress/lib/eta.js
 var require_eta = __commonJS({
@@ -897,11 +902,17 @@ var require_cli_progress = __commonJS({
 });
 
 // src/wallet-analytics.ts
+var wallet_analytics_exports = {};
+__export(wallet_analytics_exports, {
+  getLowWinLowPnl: () => getLowWinLowPnl
+});
+module.exports = __toCommonJS(wallet_analytics_exports);
 var import_fs = __toESM(require("fs"));
 var import_path = __toESM(require("path"));
 
 // src/api/getBalanace.ts
 var getBalance = async (wallet) => {
+  var _a;
   const response = await fetch("https://docs-demo.solana-mainnet.quiknode.pro", {
     method: "POST",
     headers: {
@@ -915,7 +926,7 @@ var getBalance = async (wallet) => {
     })
   });
   const data = await response.json();
-  const balanceLamports = data.result.value;
+  const balanceLamports = ((_a = data == null ? void 0 : data.result) == null ? void 0 : _a.value) || 0;
   const balanceSol = balanceLamports / 1e9;
   return balanceSol;
 };
@@ -1073,41 +1084,60 @@ async function main() {
     speed: "N/A"
   });
   const walletMap = {};
-  for (const token of Object.keys(signalList.meta.tokens)) {
-    const element = signalList.meta.tokens[token];
-    const signal = signalList.meta.signals[token];
-    const chain = element.chain;
-    const walletList = await getWalletList(token, chain);
-    walletList.data.forEach((wallet) => {
-      if (!walletMap[wallet.wallet]) {
-        walletMap[wallet.wallet] = {
-          gold: 0,
-          silver: 0,
-          bronze: 0,
-          double: 0,
-          stupid: 0
-        };
-      }
-      if (signal.token_level === "gold") {
-        walletMap[wallet.wallet].gold++;
-      }
-      if (signal.token_level === "silver") {
-        walletMap[wallet.wallet].silver++;
-      }
-      if (signal.token_level === "bronze") {
-        walletMap[wallet.wallet].bronze++;
-      }
-      if (signal.max_price_gain > 1) {
-        walletMap[wallet.wallet].double++;
-      }
-      if (signal.max_price_gain < 1) {
-        const matCup = signal.first_price * element.total_supply / 10 ** element.decimals;
-        if (matCup < 1e7) {
-          walletMap[wallet.wallet].stupid++;
+  const tokens = Object.keys(signalList.meta.tokens);
+  const signalListBatchSize = 10;
+  for (let i = 0; i < tokens.length; i += signalListBatchSize) {
+    const batch = tokens.slice(i, i + signalListBatchSize);
+    const promises = batch.map(async (token) => {
+      const element = signalList.meta.tokens[token];
+      const signal = signalList.meta.signals[token];
+      const chain = element.chain;
+      let walletList;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          walletList = await getWalletList(token, chain);
+          break;
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            throw error;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1e3));
         }
       }
+      walletList == null ? void 0 : walletList.data.forEach((wallet) => {
+        if (!walletMap[wallet.wallet]) {
+          walletMap[wallet.wallet] = {
+            gold: 0,
+            silver: 0,
+            bronze: 0,
+            double: 0,
+            stupid: 0
+          };
+        }
+        if (signal.token_level === "gold") {
+          walletMap[wallet.wallet].gold++;
+        }
+        if (signal.token_level === "silver") {
+          walletMap[wallet.wallet].silver++;
+        }
+        if (signal.token_level === "bronze") {
+          walletMap[wallet.wallet].bronze++;
+        }
+        if (signal.max_price_gain > 1) {
+          walletMap[wallet.wallet].double++;
+        }
+        if (signal.max_price_gain < 1) {
+          const matCup = signal.first_price * element.total_supply / 10 ** element.decimals;
+          if (matCup < 1e7) {
+            walletMap[wallet.wallet].stupid++;
+          }
+        }
+      });
+      progress.increment();
     });
-    progress.increment();
+    await Promise.all(promises);
   }
   const sortedWallets = Object.keys(walletMap).map((wallet) => ({
     wallet,
@@ -1131,59 +1161,64 @@ async function main() {
   const walletSet = /* @__PURE__ */ new Map();
   const stupidProgress = cliProgress("Stupid Wallet Analysis");
   stupidProgress.start(stupidWallet.length, 0);
-  for (const wallet of stupidWallet) {
-    const { data: walletStats } = await getWallet(wallet);
-    if (walletStats.last_active_timestamp && Date.now() / 1e3 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60) {
-      walletSet.set(
-        wallet,
-        `\u6D3B\u8DC3\u65F6\u95F4\u5C0F\u4E8E3\u5929 ${new Date(
-          walletStats.last_active_timestamp * 1e3
-        ).toLocaleString()}`
-      );
-    } else if (walletStats.token_winrate_7d < 0.4) {
-      walletSet.set(wallet, "7\u5929token\u80DC\u7387\u5C0F\u4E8E40%");
-    } else if (walletStats.token_num < 3) {
-      walletSet.set(wallet, "token\u6570\u91CF\u5C0F\u4E8E3");
-    } else {
-      let balance;
-      for (let i = 0; i < 5; i++) {
-        try {
-          balance = await getBalance(wallet);
-          break;
-        } catch (error) {
-          if (i === 4) throw error;
-        }
-      }
-      if (balance !== void 0 && balance < 2) {
-        let holding;
-        for (let i = 0; i < 5; i++) {
+  const batchSize = 20;
+  for (let i = 0; i < stupidWallet.length; i += batchSize) {
+    const batch = stupidWallet.slice(i, i + batchSize);
+    const promises = batch.map(async (wallet) => {
+      const { data: walletStats } = await getWallet(wallet);
+      if (walletStats.last_active_timestamp && Date.now() / 1e3 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60) {
+        walletSet.set(
+          wallet,
+          `\u6D3B\u8DC3\u65F6\u95F4\u5C0F\u4E8E3\u5929 ${new Date(
+            walletStats.last_active_timestamp * 1e3
+          ).toLocaleString()}`
+        );
+      } else if (walletStats.token_winrate_7d < 0.4) {
+        walletSet.set(wallet, "7\u5929token\u80DC\u7387\u5C0F\u4E8E40%");
+      } else if (walletStats.token_num < 3) {
+        walletSet.set(wallet, "token\u6570\u91CF\u5C0F\u4E8E3");
+      } else {
+        let balance;
+        for (let i2 = 0; i2 < 5; i2++) {
           try {
-            holding = await getHolding({
-              chain: "solana",
-              wallet
-            });
+            balance = await getBalance(wallet);
             break;
           } catch (error) {
-            if (i === 4) throw error;
+            if (i2 === 4) throw error;
           }
         }
-        if (holding) {
-          const solBalance = holding.data.holding_tokens.reduce(
-            (acc, token) => {
-              if (token.token.symbol === "SOL") {
-                acc += token.balance;
-              }
-              return acc;
-            },
-            0
-          );
-          if (balance + solBalance < 2) {
-            walletSet.set(wallet, "\u4F59\u989D\u5C0F\u4E8E2SOL");
+        if (balance !== void 0 && balance < 2) {
+          let holding;
+          for (let i2 = 0; i2 < 5; i2++) {
+            try {
+              holding = await getHolding({
+                chain: "solana",
+                wallet
+              });
+              break;
+            } catch (error) {
+              if (i2 === 4) throw error;
+            }
+          }
+          if (holding) {
+            const solBalance = holding.data.holding_tokens.reduce(
+              (acc, token) => {
+                if (token.token.symbol === "SOL") {
+                  acc += token.balance;
+                }
+                return acc;
+              },
+              0
+            );
+            if (balance + solBalance < 2) {
+              walletSet.set(wallet, "\u4F59\u989D\u5C0F\u4E8E2SOL");
+            }
           }
         }
       }
-    }
-    stupidProgress.increment();
+      stupidProgress.increment();
+    });
+    await Promise.all(promises);
   }
   stupidProgress.stop();
   const allWalletProgress = cliProgress("Get All Wallets");
@@ -1203,6 +1238,10 @@ async function main() {
   fileProgress.start(3, 0);
   if (!import_fs.default.existsSync("output")) {
     import_fs.default.mkdirSync("output");
+  }
+  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
+  for (const wallet of lowWinLowPnlWallets) {
+    walletSet.set(wallet, "token\u80DC\u7387\u5C0F\u4E8E40%\u4E147\u5929\u6536\u76CA\u5C0F\u4E8E20%");
   }
   const groupedWallets = {};
   for (const [wallet, reason] of walletSet) {
@@ -1237,32 +1276,52 @@ async function main() {
   );
   console.log("\u94B1\u5305\u5206\u6790\u7ED3\u679C", import_path.default.resolve("output/wallet-analytics.json"));
   console.log("\u4E0D\u592A\u806A\u654F\u7684\u94B1\u5305\u5217\u8868", import_path.default.resolve("output/wallet-list.json"));
-  console.log("\u4E0D\u592A\u806A\u660E\u7684\u94B1\u5305\u4EE5\u53CA\u7406\u7531\u5217\u8868", import_path.default.resolve("output/wallet-reason-list.json"));
-  console.log("\u4F4E\u80DC\u7387\u4E14\u4F4E\u6536\u76CA\u7684\u94B1\u5305\u5217\u8868", import_path.default.resolve("output/low-win-low-pnl-wallets.json"));
+  console.log(
+    "\u4E0D\u592A\u806A\u660E\u7684\u94B1\u5305\u4EE5\u53CA\u7406\u7531\u5217\u8868",
+    import_path.default.resolve("output/wallet-reason-list.json")
+  );
+  console.log(
+    "\u4F4E\u80DC\u7387\u4E14\u4F4E\u6536\u76CA\u7684\u94B1\u5305\u5217\u8868",
+    import_path.default.resolve("output/low-win-low-pnl-wallets.json")
+  );
 }
 main();
 async function getLowWinLowPnl(wallets) {
   console.log("\u5F00\u59CB\u5206\u6790\u4F4E\u80DC\u7387\u4F4E\u76C8\u5229\u94B1\u5305");
   const lowWinLowPnlWallets = /* @__PURE__ */ new Set();
   const walletsArray = Object.values(wallets).flat();
-  const batchSize = 20;
+  const batchSize = 100;
   const analysisProgress = cliProgress("Low Win Low Pnl Wallets Analysis");
   analysisProgress.start(walletsArray.length, 0);
   for (let i = 0; i < walletsArray.length; i += batchSize) {
     const batch = walletsArray.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
-      const { data: walletStats } = await getWallet(wallet);
-      if (walletStats.token_winrate_7d < 0.4 && walletStats.pnl_7d < 0.2) {
+      let walletStats;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const { data } = await getWallet(wallet);
+          walletStats = data;
+          break;
+        } catch (error) {
+          if (attempt === 4) throw error;
+        }
+      }
+      if (walletStats && walletStats.token_winrate_7d < 0.4 && walletStats.pnl_7d < 0.2) {
         lowWinLowPnlWallets.add(wallet);
       }
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 3e3));
+    await new Promise((resolve) => setTimeout(resolve, 1e3));
   }
   analysisProgress.stop();
   import_fs.default.writeFileSync(
     "output/low-win-low-pnl-wallets.json",
     JSON.stringify(Array.from(lowWinLowPnlWallets), null, 2)
   );
+  return lowWinLowPnlWallets;
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  getLowWinLowPnl
+});

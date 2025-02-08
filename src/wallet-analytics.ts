@@ -24,42 +24,64 @@ async function main() {
       stupid: number;
     };
   } = {};
-  for (const token of Object.keys(signalList.meta.tokens)) {
-    const element = signalList.meta.tokens[token];
-    const signal = signalList.meta.signals[token];
-    const chain = element.chain;
-    const walletList = await getWalletList(token, chain);
-    walletList.data.forEach((wallet) => {
-      if (!walletMap[wallet.wallet]) {
-        walletMap[wallet.wallet] = {
-          gold: 0,
-          silver: 0,
-          bronze: 0,
-          double: 0,
-          stupid: 0,
-        };
-      }
-      if (signal.token_level === "gold") {
-        walletMap[wallet.wallet].gold++;
-      }
-      if (signal.token_level === "silver") {
-        walletMap[wallet.wallet].silver++;
-      }
-      if (signal.token_level === "bronze") {
-        walletMap[wallet.wallet].bronze++;
-      }
-      if (signal.max_price_gain > 1) {
-        walletMap[wallet.wallet].double++;
-      }
-      if (signal.max_price_gain < 1) {
-        const matCup =
-          (signal.first_price * element.total_supply) / 10 ** element.decimals;
-        if (matCup < 1e7) {
-          walletMap[wallet.wallet].stupid++;
+  const tokens = Object.keys(signalList.meta.tokens);
+
+  const signalListBatchSize = 10; // 设置并发数为10
+
+  for (let i = 0; i < tokens.length; i += signalListBatchSize) {
+    const batch = tokens.slice(i, i + signalListBatchSize);
+    const promises = batch.map(async (token) => {
+      const element = signalList.meta.tokens[token];
+      const signal = signalList.meta.signals[token];
+      const chain = element.chain;
+      let walletList;
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          walletList = await getWalletList(token, chain);
+          break; // 成功获取数据后跳出循环
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            throw error;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待1秒后重试
         }
       }
+      walletList?.data.forEach((wallet) => {
+        if (!walletMap[wallet.wallet]) {
+          walletMap[wallet.wallet] = {
+            gold: 0,
+            silver: 0,
+            bronze: 0,
+            double: 0,
+            stupid: 0,
+          };
+        }
+        if (signal.token_level === "gold") {
+          walletMap[wallet.wallet].gold++;
+        }
+        if (signal.token_level === "silver") {
+          walletMap[wallet.wallet].silver++;
+        }
+        if (signal.token_level === "bronze") {
+          walletMap[wallet.wallet].bronze++;
+        }
+        if (signal.max_price_gain > 1) {
+          walletMap[wallet.wallet].double++;
+        }
+        if (signal.max_price_gain < 1) {
+          const matCup =
+            (signal.first_price * element.total_supply) /
+            10 ** element.decimals;
+          if (matCup < 1e7) {
+            walletMap[wallet.wallet].stupid++;
+          }
+        }
+      });
+      progress.increment();
     });
-    progress.increment();
+    await Promise.all(promises);
   }
 
   const sortedWallets = Object.keys(walletMap)
@@ -94,64 +116,69 @@ async function main() {
   const stupidProgress = cliProgress("Stupid Wallet Analysis");
   stupidProgress.start(stupidWallet.length, 0);
 
-  for (const wallet of stupidWallet) {
-    const { data: walletStats } = await getWallet(wallet);
-    if (
-      walletStats.last_active_timestamp &&
-      Date.now() / 1000 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60
-    ) {
-      walletSet.set(
-        wallet,
-        `活跃时间小于3天 ${new Date(
-          walletStats.last_active_timestamp * 1000
-        ).toLocaleString()}`
-      );
-    } else if (walletStats.token_winrate_7d < 0.4) {
-      walletSet.set(wallet, "7天token胜率小于40%");
-    } else if (walletStats.token_num < 3) {
-      walletSet.set(wallet, "token数量小于3");
-    } else {
-      let balance;
-      for (let i = 0; i < 5; i++) {
-        try {
-          balance = await getBalance(wallet);
-          break;
-        } catch (error) {
-          if (i === 4) throw error;
-        }
-      }
-
-      if (balance !== undefined && balance < 2) {
-        let holding;
+  const batchSize = 20;
+  for (let i = 0; i < stupidWallet.length; i += batchSize) {
+    const batch = stupidWallet.slice(i, i + batchSize);
+    const promises = batch.map(async (wallet) => {
+      const { data: walletStats } = await getWallet(wallet);
+      if (
+        walletStats.last_active_timestamp &&
+        Date.now() / 1000 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60
+      ) {
+        walletSet.set(
+          wallet,
+          `活跃时间小于3天 ${new Date(
+            walletStats.last_active_timestamp * 1000
+          ).toLocaleString()}`
+        );
+      } else if (walletStats.token_winrate_7d < 0.4) {
+        walletSet.set(wallet, "7天token胜率小于40%");
+      } else if (walletStats.token_num < 3) {
+        walletSet.set(wallet, "token数量小于3");
+      } else {
+        let balance;
         for (let i = 0; i < 5; i++) {
           try {
-            holding = await getHolding({
-              chain: "solana",
-              wallet,
-            });
+            balance = await getBalance(wallet);
             break;
           } catch (error) {
             if (i === 4) throw error;
           }
         }
 
-        if (holding) {
-          const solBalance = holding.data.holding_tokens.reduce(
-            (acc: number, token: any) => {
-              if (token.token.symbol === "SOL") {
-                acc += token.balance;
-              }
-              return acc;
-            },
-            0
-          );
-          if (balance + solBalance < 2) {
-            walletSet.set(wallet, "余额小于2SOL");
+        if (balance !== undefined && balance < 2) {
+          let holding;
+          for (let i = 0; i < 5; i++) {
+            try {
+              holding = await getHolding({
+                chain: "solana",
+                wallet,
+              });
+              break;
+            } catch (error) {
+              if (i === 4) throw error;
+            }
+          }
+
+          if (holding) {
+            const solBalance = holding.data.holding_tokens.reduce(
+              (acc: number, token: any) => {
+                if (token.token.symbol === "SOL") {
+                  acc += token.balance;
+                }
+                return acc;
+              },
+              0
+            );
+            if (balance + solBalance < 2) {
+              walletSet.set(wallet, "余额小于2SOL");
+            }
           }
         }
       }
-    }
-    stupidProgress.increment();
+      stupidProgress.increment();
+    });
+    await Promise.all(promises);
   }
   stupidProgress.stop();
 
@@ -178,6 +205,12 @@ async function main() {
     fs.mkdirSync("output");
   }
 
+  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
+
+  for (const wallet of lowWinLowPnlWallets) {
+    walletSet.set(wallet, "token胜率小于40%且7天收益小于20%");
+  }
+
   // 将钱包按照分组ID组织
   const groupedWallets: { [groupId: string]: string[] } = {};
   for (const [wallet, reason] of walletSet) {
@@ -192,6 +225,7 @@ async function main() {
       }
     }
   }
+
   // 写入按分组组织的钱包列表
   fs.writeFileSync(
     "output/wallet-list.json",
@@ -221,39 +255,62 @@ async function main() {
   // 输出文件绝对路径
   console.log("钱包分析结果", path.resolve("output/wallet-analytics.json"));
   console.log("不太聪敏的钱包列表", path.resolve("output/wallet-list.json"));
-  console.log("不太聪明的钱包以及理由列表", path.resolve("output/wallet-reason-list.json"));
-  console.log("低胜率且低收益的钱包列表", path.resolve("output/low-win-low-pnl-wallets.json"));
+  console.log(
+    "不太聪明的钱包以及理由列表",
+    path.resolve("output/wallet-reason-list.json")
+  );
+  console.log(
+    "低胜率且低收益的钱包列表",
+    path.resolve("output/low-win-low-pnl-wallets.json")
+  );
 }
 
 main();
 
-async function getLowWinLowPnl(wallets: { [groupId: string]: string[] }) {
+export async function getLowWinLowPnl(wallets: {
+  [groupId: string]: string[];
+}) {
   console.log("开始分析低胜率低盈利钱包");
 
   const lowWinLowPnlWallets = new Set<string>();
   const walletsArray = Object.values(wallets).flat();
-  const batchSize = 20;
-  
+  const batchSize = 100;
+
   const analysisProgress = cliProgress("Low Win Low Pnl Wallets Analysis");
   analysisProgress.start(walletsArray.length, 0);
 
   for (let i = 0; i < walletsArray.length; i += batchSize) {
     const batch = walletsArray.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
-      const { data: walletStats } = await getWallet(wallet);
-      if (walletStats.token_winrate_7d < 0.4 && walletStats.pnl_7d < 0.2) {
+      let walletStats;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const { data } = await getWallet(wallet);
+          walletStats = data;
+          break; // 成功获取数据后跳出循环
+        } catch (error) {
+          if (attempt === 4) throw error; // 最后一次重试失败则抛出错误
+        }
+      }
+      if (
+        walletStats &&
+        walletStats.token_winrate_7d < 0.4 &&
+        walletStats.pnl_7d < 0.2
+      ) {
         lowWinLowPnlWallets.add(wallet);
       }
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // 每次运行完暂停3s
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // 每次运行完暂停1s
   }
-  
+
   analysisProgress.stop();
 
   fs.writeFileSync(
     "output/low-win-low-pnl-wallets.json",
     JSON.stringify(Array.from(lowWinLowPnlWallets), null, 2)
   );
+
+  return lowWinLowPnlWallets;
 }
