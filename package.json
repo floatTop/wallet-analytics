@@ -20,7 +20,8 @@
 		"test": "ts-node ./src/test.ts",
 		"dune": "ts-node ./src/dune.ts",
 		"build": "node ./build.js",
-		"upload": "ts-node ./src/util/upload.ts"
+		"upload": "ts-node ./src/util/upload.ts",
+		"cron": "ts-node ./src/cron.ts"
 	},
 	"dependencies": {
 		"@google-cloud/local-auth": "^3.0.1",
