@@ -27,27 +27,37 @@ type DuneConfig = {
 const apiKey = "EH6BsEYQOgXobDxQDLMJu76BjwubBjWZ"; // 你的 Dune API Key
 
 async function dune() {
-  const duneConfig: Record<string, DuneConfig> = {
-    photon: {
-      queryId: 3792656,
-      limit: 1000,
-      sort_by: "netPnLUSD desc",
-    },
-    bull: {
-      queryId: 4436309,
-      limit: 1000,
-      sort_by: "net_pnl desc",
-    },
-  };
+  // const duneConfig: Record<string, DuneConfig> = {
+  //   photon: {
+  //     queryId: 3792656,
+  //     limit: 1000,
+  //     sort_by: "netPnLUSD desc",
+  //   },
+  //   bull: {
+  //     queryId: 4436309,
+  //     limit: 1000,
+  //     sort_by: "net_pnl desc",
+  //   },
+  // };
 
-  getPhotonWallet(duneConfig.photon);
+  // getPhotonWallet(duneConfig.photon);
+  const data = await fetchDuneData({
+    queryId: 4147755,
+    limit: 2000,
+    sort_by: "wins_2x desc",
+  });
+  debugger
+  fs.writeFileSync(
+    `output/dune.json`,
+    JSON.stringify(data.map((item: any) => item.wallet), null, 2)
+  );
   // getBullWallet(duneConfig.bull);
 }
 
 async function fetchDuneData(config: DuneConfig) {
   const queryParams = new URLSearchParams({
     limit: "1000",
-    sort_by: config.sort_by,
+    // sort_by: config.sort_by,
   });
 
   const url = `https://api.dune.com/api/v1/query/${config.queryId}/results?${queryParams}`;

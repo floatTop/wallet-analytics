@@ -5,23 +5,28 @@
 		"@rollup/plugin-typescript": "^12.1.2",
 		"@types/cli-progress": "^3.11.6",
 		"@types/node": "^22.10.10",
+		"@types/node-cron": "^3.0.11",
 		"esbuild": "^0.24.2",
 		"glob": "^11.0.1",
+		"raw-loader": "^4.0.2",
 		"rollup": "^4.32.1",
-		"typescript": "^5.7.3",
-		"unbuild": "^3.3.1",
 		"ts-node": "^10.9.2",
-		"raw-loader": "^4.0.2"
+		"typescript": "^5.7.3",
+		"unbuild": "^3.3.1"
 	},
 	"scripts": {
 		"analytics": "ts-node ./src/wallet-analytics.ts",
 		"signal": "ts-node ./src/token-heatmap.ts",
 		"test": "ts-node ./src/test.ts",
 		"dune": "ts-node ./src/dune.ts",
-		"build": "node ./build.js"
+		"build": "node ./build.js",
+		"upload": "ts-node ./src/util/upload.ts"
 	},
 	"dependencies": {
+		"@google-cloud/local-auth": "^3.0.1",
 		"@solana/web3.js": "^1.98.0",
-		"cli-progress": "^3.12.0"
+		"cli-progress": "^3.12.0",
+		"googleapis": "^144.0.0",
+		"node-cron": "^3.0.3"
 	}
 }

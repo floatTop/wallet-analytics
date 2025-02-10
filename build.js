@@ -9,6 +9,10 @@ const buildOptions = [
     entryPoints: ["src/dune.ts"],
     outfile: "dist/dune.js",
   },
+  {
+    entryPoints: ["src/cron.ts"],
+    outfile: "dist/cron.js",
+  },
 ];
 
 buildOptions.forEach((options) => {
@@ -16,7 +20,7 @@ buildOptions.forEach((options) => {
     ...options,
     bundle: true, // 👈 这个会自动打包 `node_modules` 的依赖
     platform: "node",
-    target: "node16",
+    target: "ESNext",
     external: [], // 👈 如果你不想排除任何依赖，可以设为空数组
     treeShaking: true,
   }).catch(() => process.exit(1));
