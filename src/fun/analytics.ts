@@ -260,7 +260,8 @@ export async function getLowWinLowPnl(wallets: {
           walletStats = data;
           break; // 成功获取数据后跳出循环
         } catch (error) {
-
+          debugger;
+          console.log(error);
           if (attempt === 4) throw error; // 最后一次重试失败则抛出错误
         }
       }

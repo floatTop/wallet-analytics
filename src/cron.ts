@@ -5,6 +5,6 @@ analytics().then((result) => {
   console.log(result.groupedWallets);
   uploadFile({
     data: result.groupedWallets,
-    fileName: `wallet-analytics-${new Date().toLocaleDateString()}.json`,
+    fileName: `wallet-analytics-${new Date().toLocaleString()}.json`,
   });
 });

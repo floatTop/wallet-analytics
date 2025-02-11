@@ -1266,6 +1266,8 @@ async function getLowWinLowPnl(wallets) {
           walletStats = data;
           break;
         } catch (error) {
+          debugger;
+          console.log(error);
           if (attempt === 4) throw error;
         }
       }
@@ -1278,7 +1280,7 @@ async function getLowWinLowPnl(wallets) {
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 1e3));
+    await new Promise((resolve) => setTimeout(resolve, 3e3));
   }
   analysisProgress.stop();
   return lowWinLowPnlWallets;
