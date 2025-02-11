@@ -260,6 +260,7 @@ export async function getLowWinLowPnl(wallets: {
           walletStats = data;
           break; // 成功获取数据后跳出循环
         } catch (error) {
+
           if (attempt === 4) throw error; // 最后一次重试失败则抛出错误
         }
       }
@@ -276,7 +277,7 @@ export async function getLowWinLowPnl(wallets: {
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // 每次运行完暂停1s
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // 每次运行完暂停1s
   }
 
   analysisProgress.stop();
