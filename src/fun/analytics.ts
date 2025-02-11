@@ -254,7 +254,7 @@ export async function getLowWinLowPnl(wallets: {
     const batch = walletsArray.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
       let walletStats;
-      for (let attempt = 0; attempt < 5; attempt++) {
+      for (let attempt = 0; attempt < 10; attempt++) {
         try {
           const { data } = await getWallet(wallet);
           walletStats = data;
