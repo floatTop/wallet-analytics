@@ -1,6 +1,16 @@
+import fs from "fs";
+import path from "path";
 import { analytics } from "./fun/analytics";
-import { uploadFile } from "./util/upload";
 
 analytics().then((result) => {
-  uploadFile({data: result.groupedWallets, fileName: "wallet-analytics.json"});
+  if (!fs.existsSync("output")) {
+    fs.mkdirSync("output");
+  }
+  fs.writeFileSync("output/wallet-analytics.json", JSON.stringify(result.groupedWallets, null, 2));
+  console.log(
+    "钱包分析结果",
+    path.resolve(
+      `output/wallet-analytics-${new Date().toLocaleDateString()}.json`
+    )
+  );
 });

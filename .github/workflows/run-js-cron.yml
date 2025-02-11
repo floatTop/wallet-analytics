@@ -19,4 +19,4 @@ jobs:
           node-version: '18'  # 可以根据需要修改 Node.js 版本
 
       - name: 运行 JavaScript 文件
-        run: node dist/wallet-analytics.js  # 用 node 命令运行你的 JS 文件
+        run: node dist/cron.js  # 用 node 命令运行你的 JS 文件

@@ -896,6 +896,10 @@ var require_cli_progress = __commonJS({
   }
 });
 
+// src/wallet-analytics.ts
+var import_fs = __toESM(require("fs"));
+var import_path = __toESM(require("path"));
+
 // src/cookie.ts
 var cookie = "_ga=GA1.1.530881546.1734424574; _ga_8RYMEEL63P=GS1.1.1735447149.1.1.1735447151.0.0.0; beegosessionID=d6862a0c801366f1dd69ddcc2c33e8a9; cf_clearance=H4eUrhic1oszRwDbblMU1xdZon_2mqiV8norM1hd6fQ-1737736092-1.2.1.1-a1qs999txezz5OJ9dF.jybvFKbCJh05KJA_46wlMFiLYguoNk5dQ4dGf25VX_DaLEJz3vT5nTqTd1DXPOG1.0pKZ4nWIVPDSt9qjAM9Hfbt0wNK__RYoKBrYtzv6LkjPrtkk8hn1VSXonm2868E7mUPvgZp_heYpCBbd7tcAVv5tvs5OzbGltiI83IOUS0Wz59EeAZ9d6.zjkKDhwLlROqtdgPyJyqWWtUXAxYQ7OfuvR49XpWKTu_b0i.HYvMzNelwSsECuOdAkHt.5QDtWmNM0GVf4.xZM_80RJRmauZw; frill-sdk={%22identity%22:{%22frillToken%22:%22eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJRaFpYeGZEeDJYU284clJrIiwiaXNzIjoiZGVib3RhaS5mcmlsbC5jbyIsImF1ZCI6ImRlYm90YWkuZnJpbGwuY28iLCJzdWIiOiJ1c2VyXzhvbHd3cWQ4IiwiY29tIjowLCJhZG1pblZpZXdpbmdBc1VzZXIiOmZhbHNlLCJzY29wZSI6ImZ1bGwiLCJleHAiOjE3Mzc3NDAzNDcuMTYzMDk0fQ.1NzsXLrTA3Ah3moNbr5DGc90BKgMT3PUTAxYYiRZ7dw%22%2C%22frillRefreshToken%22:%22km4li5bBjZq5WNwcCNpBEsjhoZmvnYUP%22%2C%22email%22:%22%22}}; version=66; _ga_7QSW3N3LVZ=GS1.1.1737774140.265.1.1737774292.0.0.0; __cf_bm=YBgC1xcirrPH7CjsSLoL9QOhm5sh69Rq5IZUpls5Mw4-1737774814-1.0.1.1-uisMlrWvbFWO0KfdfDgZAb_l25FytsJFQJNJihcTb.OivjpcdE2bjIu2Q_JWr5mDm6OJJMl3o8zM4xEEBhPeLQ";
 
@@ -1058,8 +1062,6 @@ var getWalletList = async (token, chain, sortField = "last_trade_time", sortOrde
 };
 
 // src/fun/analytics.ts
-var import_fs = __toESM(require("fs"));
-var import_path = __toESM(require("path"));
 async function analytics() {
   const progress = cliProgress("Analyzing Wallet");
   const signalList = await getSignalList();
@@ -1219,9 +1221,6 @@ async function analytics() {
   await getLowWinLowPnl(wallets);
   const fileProgress = cliProgress("Writing Files");
   fileProgress.start(3, 0);
-  if (!import_fs.default.existsSync("output")) {
-    import_fs.default.mkdirSync("output");
-  }
   const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
   for (const wallet of lowWinLowPnlWallets) {
     walletSet.set(wallet, "token\u80DC\u7387\u5C0F\u4E8E40%\u4E147\u5929\u6536\u76CA\u5C0F\u4E8E20%");
@@ -1238,45 +1237,17 @@ async function analytics() {
       }
     }
   }
-  import_fs.default.writeFileSync(
-    `output/wallet-list.json`,
-    JSON.stringify(groupedWallets, null, 2)
-  );
-  fileProgress.increment();
-  import_fs.default.writeFileSync(
-    `output/wallet-reason-list.json`,
-    JSON.stringify(Array.from(walletSet), null, 2)
-  );
-  fileProgress.increment();
-  import_fs.default.writeFileSync(
-    `output/wallet-analytics.json`,
-    JSON.stringify(sortedWallets, null, 2)
-  );
   fileProgress.increment();
   fileProgress.stop();
   console.log(
     `Done! wallet count: ${Object.keys(walletMap).length} token count: ${Object.keys(signalList.meta.tokens).length}`
   );
-  console.log(
-    "\u94B1\u5305\u5206\u6790\u7ED3\u679C",
-    import_path.default.resolve(
-      `output/wallet-analytics.json`
-    )
-  );
-  console.log(
-    "\u4E0D\u592A\u806A\u654F\u7684\u94B1\u5305\u5217\u8868",
-    import_path.default.resolve(`output/wallet-list.json`)
-  );
-  console.log(
-    "\u4E0D\u592A\u806A\u660E\u7684\u94B1\u5305\u4EE5\u53CA\u7406\u7531\u5217\u8868",
-    import_path.default.resolve(
-      `output/wallet-reason-list.json`
-    )
-  );
-  console.log(
-    "\u4F4E\u80DC\u7387\u4E14\u4F4E\u6536\u76CA\u7684\u94B1\u5305\u5217\u8868",
-    import_path.default.resolve(`output/low-win-low-pnl-wallets.json`)
-  );
+  return {
+    groupedWallets,
+    walletSet,
+    sortedWallets,
+    lowWinLowPnlWallets
+  };
 }
 async function getLowWinLowPnl(wallets) {
   console.log("\u5F00\u59CB\u5206\u6790\u4F4E\u80DC\u7387\u4F4E\u76C8\u5229\u94B1\u5305");
@@ -1310,12 +1281,19 @@ async function getLowWinLowPnl(wallets) {
     await new Promise((resolve) => setTimeout(resolve, 1e3));
   }
   analysisProgress.stop();
-  import_fs.default.writeFileSync(
-    `output/low-win-low-pnl-wallets.json`,
-    JSON.stringify(Array.from(lowWinLowPnlWallets), null, 2)
-  );
   return lowWinLowPnlWallets;
 }
 
 // src/wallet-analytics.ts
-analytics();
+analytics().then((result) => {
+  if (!import_fs.default.existsSync("output")) {
+    import_fs.default.mkdirSync("output");
+  }
+  import_fs.default.writeFileSync("output/wallet-analytics.json", JSON.stringify(result.groupedWallets, null, 2));
+  console.log(
+    "\u94B1\u5305\u5206\u6790\u7ED3\u679C",
+    import_path.default.resolve(
+      `output/wallet-analytics-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`
+    )
+  );
+});
