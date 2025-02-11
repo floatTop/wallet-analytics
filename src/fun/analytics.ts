@@ -6,7 +6,6 @@ import { getWalletByGroup } from "@/api/getWalletByGroup";
 import { getWalletGroup } from "@/api/getWalletGroup";
 import { getWalletList } from "@/api/getWalletList";
 import cliProgress from "@/util/cliProgress";
-import fs from "fs";
 
 export async function analytics() {
   const progress = cliProgress("Analyzing Wallet");
@@ -199,10 +198,6 @@ export async function analytics() {
 
   const fileProgress = cliProgress("Writing Files");
   fileProgress.start(3, 0);
-
-  if (!fs.existsSync("output")) {
-    fs.mkdirSync("output");
-  }
 
   const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
 
