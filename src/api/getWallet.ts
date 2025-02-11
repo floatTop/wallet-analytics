@@ -1,8 +1,9 @@
+import request from "./request";
+
 export async function getWallet(wallet: string): Promise<WalletStats> {
-  const res = await fetch(
-    `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`
-  );
-  return res.json();
+  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`;
+
+  return request(url);
 }
 
 export type WalletStats = {

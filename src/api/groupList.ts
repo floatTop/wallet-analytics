@@ -1,15 +1,7 @@
-import getCookie from "../util/getCookie";
+import request from "./request";
 
 export const getGroupList = async (): Promise<GroupListResponse> => {
-  const response = await fetch(
-    "https://debot.ai/api/wallet/group/list",
-    {
-      headers: {
-        Cookie: getCookie(),
-      },
-    }
-  );
-  return response.json();
+  return request("https://debot.ai/api/wallet/group/list");
 };
 
 export type GroupListResponse = {

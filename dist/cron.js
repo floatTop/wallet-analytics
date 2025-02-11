@@ -1817,9 +1817,34 @@ var require_cli_progress = __commonJS({
 // src/cron.ts
 var import_node_cron = __toESM(require_node_cron());
 
+// src/cookie.ts
+var cookie = "_ga=GA1.1.530881546.1734424574; _ga_8RYMEEL63P=GS1.1.1735447149.1.1.1735447151.0.0.0; beegosessionID=d6862a0c801366f1dd69ddcc2c33e8a9; cf_clearance=H4eUrhic1oszRwDbblMU1xdZon_2mqiV8norM1hd6fQ-1737736092-1.2.1.1-a1qs999txezz5OJ9dF.jybvFKbCJh05KJA_46wlMFiLYguoNk5dQ4dGf25VX_DaLEJz3vT5nTqTd1DXPOG1.0pKZ4nWIVPDSt9qjAM9Hfbt0wNK__RYoKBrYtzv6LkjPrtkk8hn1VSXonm2868E7mUPvgZp_heYpCBbd7tcAVv5tvs5OzbGltiI83IOUS0Wz59EeAZ9d6.zjkKDhwLlROqtdgPyJyqWWtUXAxYQ7OfuvR49XpWKTu_b0i.HYvMzNelwSsECuOdAkHt.5QDtWmNM0GVf4.xZM_80RJRmauZw; frill-sdk={%22identity%22:{%22frillToken%22:%22eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJRaFpYeGZEeDJYU284clJrIiwiaXNzIjoiZGVib3RhaS5mcmlsbC5jbyIsImF1ZCI6ImRlYm90YWkuZnJpbGwuY28iLCJzdWIiOiJ1c2VyXzhvbHd3cWQ4IiwiY29tIjowLCJhZG1pblZpZXdpbmdBc1VzZXIiOmZhbHNlLCJzY29wZSI6ImZ1bGwiLCJleHAiOjE3Mzc3NDAzNDcuMTYzMDk0fQ.1NzsXLrTA3Ah3moNbr5DGc90BKgMT3PUTAxYYiRZ7dw%22%2C%22frillRefreshToken%22:%22km4li5bBjZq5WNwcCNpBEsjhoZmvnYUP%22%2C%22email%22:%22%22}}; version=66; _ga_7QSW3N3LVZ=GS1.1.1737774140.265.1.1737774292.0.0.0; __cf_bm=YBgC1xcirrPH7CjsSLoL9QOhm5sh69Rq5IZUpls5Mw4-1737774814-1.0.1.1-uisMlrWvbFWO0KfdfDgZAb_l25FytsJFQJNJihcTb.OivjpcdE2bjIu2Q_JWr5mDm6OJJMl3o8zM4xEEBhPeLQ";
+
+// src/util/getCookie.ts
+function getCookie() {
+  return cookie;
+}
+
+// src/api/request.ts
+var cache = /* @__PURE__ */ new Map();
+function request(url, init) {
+  if (cache.has(url)) {
+    return cache.get(url);
+  }
+  const promise = fetch(url, {
+    ...init,
+    headers: {
+      Cookie: getCookie(),
+      ...init?.headers
+    }
+  }).then((res) => res.json());
+  cache.set(url, promise);
+  return promise;
+}
+
 // src/api/getBalanace.ts
 var getBalance = async (wallet) => {
-  const response = await fetch("https://docs-demo.solana-mainnet.quiknode.pro", {
+  const data = await request("https://docs-demo.solana-mainnet.quiknode.pro", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -1831,7 +1856,6 @@ var getBalance = async (wallet) => {
       params: [wallet]
     })
   });
-  const data = await response.json();
   const balanceLamports = data?.result?.value || 0;
   const balanceSol = balanceLamports / 1e9;
   return balanceSol;
@@ -1843,10 +1867,9 @@ var getHolding = async ({
   wallet,
   next
 }) => {
-  const response = await fetch(
+  return request(
     `https://debot.ai/api/dashboard/wallet/holding_tokens?chain=${chain}&wallet=${wallet}&next=${next}&sort_field=last_active_timestamp&sort_order=desc`
   );
-  return response.json();
 };
 
 // src/util/cliProgress.ts
@@ -1932,54 +1955,27 @@ async function getSignalList() {
 
 // src/api/getWallet.ts
 async function getWallet(wallet) {
-  const res = await fetch(
-    `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`
-  );
-  return res.json();
-}
-
-// src/cookie.ts
-var cookie = "_ga=GA1.1.530881546.1734424574; _ga_8RYMEEL63P=GS1.1.1735447149.1.1.1735447151.0.0.0; beegosessionID=d6862a0c801366f1dd69ddcc2c33e8a9; cf_clearance=H4eUrhic1oszRwDbblMU1xdZon_2mqiV8norM1hd6fQ-1737736092-1.2.1.1-a1qs999txezz5OJ9dF.jybvFKbCJh05KJA_46wlMFiLYguoNk5dQ4dGf25VX_DaLEJz3vT5nTqTd1DXPOG1.0pKZ4nWIVPDSt9qjAM9Hfbt0wNK__RYoKBrYtzv6LkjPrtkk8hn1VSXonm2868E7mUPvgZp_heYpCBbd7tcAVv5tvs5OzbGltiI83IOUS0Wz59EeAZ9d6.zjkKDhwLlROqtdgPyJyqWWtUXAxYQ7OfuvR49XpWKTu_b0i.HYvMzNelwSsECuOdAkHt.5QDtWmNM0GVf4.xZM_80RJRmauZw; frill-sdk={%22identity%22:{%22frillToken%22:%22eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJRaFpYeGZEeDJYU284clJrIiwiaXNzIjoiZGVib3RhaS5mcmlsbC5jbyIsImF1ZCI6ImRlYm90YWkuZnJpbGwuY28iLCJzdWIiOiJ1c2VyXzhvbHd3cWQ4IiwiY29tIjowLCJhZG1pblZpZXdpbmdBc1VzZXIiOmZhbHNlLCJzY29wZSI6ImZ1bGwiLCJleHAiOjE3Mzc3NDAzNDcuMTYzMDk0fQ.1NzsXLrTA3Ah3moNbr5DGc90BKgMT3PUTAxYYiRZ7dw%22%2C%22frillRefreshToken%22:%22km4li5bBjZq5WNwcCNpBEsjhoZmvnYUP%22%2C%22email%22:%22%22}}; version=66; _ga_7QSW3N3LVZ=GS1.1.1737774140.265.1.1737774292.0.0.0; __cf_bm=YBgC1xcirrPH7CjsSLoL9QOhm5sh69Rq5IZUpls5Mw4-1737774814-1.0.1.1-uisMlrWvbFWO0KfdfDgZAb_l25FytsJFQJNJihcTb.OivjpcdE2bjIu2Q_JWr5mDm6OJJMl3o8zM4xEEBhPeLQ";
-
-// src/util/getCookie.ts
-function getCookie() {
-  return cookie;
+  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`;
+  return request(url);
 }
 
 // src/api/getWalletByGroup.ts
 async function getWalletByGroup(groupId) {
-  const response = await fetch(
-    `https://debot.ai/api/wallet/group/get?id=${groupId}&sort_field=pnl_percent_24h&sort_order=desc`,
-    {
-      headers: {
-        Cookie: getCookie()
-      }
-    }
+  return request(
+    `https://debot.ai/api/wallet/group/get?id=${groupId}&sort_field=pnl_percent_24h&sort_order=desc`
   );
-  return response.json();
 }
 
 // src/api/getWalletGroup.ts
 async function getWalletGroup() {
-  const response = await fetch("https://debot.ai/api/wallet/group/list", {
-    headers: {
-      Cookie: getCookie()
-    }
-  });
-  return response.json();
+  return request("https://debot.ai/api/wallet/group/list");
 }
 
 // src/api/getWalletList.ts
 var getWalletList = async (token, chain, sortField = "last_trade_time", sortOrder = "desc") => {
-  const response = await fetch(
-    `https://debot.ai/api/wallet/group/hot_token_wallets/details?token=${token}&chain=${chain}&sort_field=${sortField}&sort_order=${sortOrder}`,
-    {
-      headers: {
-        Cookie: getCookie()
-      }
-    }
+  return request(
+    `https://debot.ai/api/wallet/group/hot_token_wallets/details?token=${token}&chain=${chain}&sort_field=${sortField}&sort_order=${sortOrder}`
   );
-  return response?.json();
 };
 
 // src/fun/analytics.ts
@@ -2164,17 +2160,17 @@ async function analytics() {
     }
   }
   import_fs.default.writeFileSync(
-    `output/wallet-list-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`,
+    `output/wallet-list.json`,
     JSON.stringify(groupedWallets, null, 2)
   );
   fileProgress.increment();
   import_fs.default.writeFileSync(
-    `output/wallet-reason-list-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`,
+    `output/wallet-reason-list.json`,
     JSON.stringify(Array.from(walletSet), null, 2)
   );
   fileProgress.increment();
   import_fs.default.writeFileSync(
-    `output/wallet-analytics-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`,
+    `output/wallet-analytics.json`,
     JSON.stringify(sortedWallets, null, 2)
   );
   fileProgress.increment();
@@ -2182,15 +2178,25 @@ async function analytics() {
   console.log(
     `Done! wallet count: ${Object.keys(walletMap).length} token count: ${Object.keys(signalList.meta.tokens).length}`
   );
-  console.log("\u94B1\u5305\u5206\u6790\u7ED3\u679C", import_path.default.resolve(`output/wallet-analytics-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`));
-  console.log("\u4E0D\u592A\u806A\u654F\u7684\u94B1\u5305\u5217\u8868", import_path.default.resolve(`output/wallet-list-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`));
+  console.log(
+    "\u94B1\u5305\u5206\u6790\u7ED3\u679C",
+    import_path.default.resolve(
+      `output/wallet-analytics.json`
+    )
+  );
+  console.log(
+    "\u4E0D\u592A\u806A\u654F\u7684\u94B1\u5305\u5217\u8868",
+    import_path.default.resolve(`output/wallet-list.json`)
+  );
   console.log(
     "\u4E0D\u592A\u806A\u660E\u7684\u94B1\u5305\u4EE5\u53CA\u7406\u7531\u5217\u8868",
-    import_path.default.resolve(`output/wallet-reason-list-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`)
+    import_path.default.resolve(
+      `output/wallet-reason-list.json`
+    )
   );
   console.log(
     "\u4F4E\u80DC\u7387\u4E14\u4F4E\u6536\u76CA\u7684\u94B1\u5305\u5217\u8868",
-    import_path.default.resolve(`output/low-win-low-pnl-wallets-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`)
+    import_path.default.resolve(`output/low-win-low-pnl-wallets.json`)
   );
 }
 async function getLowWinLowPnl(wallets) {
@@ -2216,6 +2222,9 @@ async function getLowWinLowPnl(wallets) {
       if (walletStats && walletStats.token_winrate_7d < 0.4 && walletStats.pnl_7d < 0.2) {
         lowWinLowPnlWallets.add(wallet);
       }
+      if (walletStats && walletStats.buy_times_7d + walletStats.sell_times_7d > 1400) {
+        lowWinLowPnlWallets.add(wallet);
+      }
       analysisProgress.increment();
     });
     await Promise.all(promises);
@@ -2223,7 +2232,7 @@ async function getLowWinLowPnl(wallets) {
   }
   analysisProgress.stop();
   import_fs.default.writeFileSync(
-    `output/low-win-low-pnl-wallets-${(/* @__PURE__ */ new Date()).toLocaleDateString()}.json`,
+    `output/low-win-low-pnl-wallets.json`,
     JSON.stringify(Array.from(lowWinLowPnlWallets), null, 2)
   );
   return lowWinLowPnlWallets;

@@ -1,12 +1,7 @@
-import getCookie from "../util/getCookie";
+import request from "./request";
 
 export async function getWalletGroup(): Promise<WalletGroupType> {
-  const response = await fetch("https://debot.ai/api/wallet/group/list", {
-    headers: {
-      Cookie: getCookie(),
-    },
-  });
-  return response.json();
+  return request("https://debot.ai/api/wallet/group/list");
 }
 
 export type WalletGroupType = {

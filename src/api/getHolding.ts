@@ -1,3 +1,5 @@
+import request from "./request";
+
 export const getHolding = async ({
   chain,
   wallet,
@@ -7,10 +9,9 @@ export const getHolding = async ({
   wallet: string;
   next?: string;
 }) => {
-  const response = await fetch(
+  return request(
     `https://debot.ai/api/dashboard/wallet/holding_tokens?chain=${chain}&wallet=${wallet}&next=${next}&sort_field=last_active_timestamp&sort_order=desc`
   );
-  return response.json();
 };
 
 export type HoldingResponse = {

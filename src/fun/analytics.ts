@@ -6,9 +6,7 @@ import { getWalletByGroup } from "@/api/getWalletByGroup";
 import { getWalletGroup } from "@/api/getWalletGroup";
 import { getWalletList } from "@/api/getWalletList";
 import cliProgress from "@/util/cliProgress";
-import { uploadFile } from "@/util/upload";
 import fs from "fs";
-import path from "path";
 
 export async function analytics() {
   const progress = cliProgress("Analyzing Wallet");
@@ -228,22 +226,6 @@ export async function analytics() {
   }
 
   // 写入按分组组织的钱包列表
-  fs.writeFileSync(
-    `output/wallet-list-${new Date().toLocaleDateString()}.json`,
-    JSON.stringify(groupedWallets, null, 2)
-  );
-  fileProgress.increment();
-
-  fs.writeFileSync(
-    `output/wallet-reason-list-${new Date().toLocaleDateString()}.json`,
-    JSON.stringify(Array.from(walletSet), null, 2)
-  );
-  fileProgress.increment();
-
-  fs.writeFileSync(
-    `output/wallet-analytics-${new Date().toLocaleDateString()}.json`,
-    JSON.stringify(sortedWallets, null, 2)
-  );
   fileProgress.increment();
   fileProgress.stop();
 
@@ -253,40 +235,16 @@ export async function analytics() {
     }`
   );
 
-  // 输出文件绝对路径
-  console.log(
-    "钱包分析结果",
-    path.resolve(
-      `output/wallet-analytics-${new Date().toLocaleDateString()}.json`
-    )
-  );
-  console.log(
-    "不太聪敏的钱包列表",
-    path.resolve(`output/wallet-list-${new Date().toLocaleDateString()}.json`)
-  );
-  console.log(
-    "不太聪明的钱包以及理由列表",
-    path.resolve(
-      `output/wallet-reason-list-${new Date().toLocaleDateString()}.json`
-    )
-  );
-  console.log(
-    "低胜率且低收益的钱包列表",
-    path.resolve(
-      `output/low-win-low-pnl-wallets-${new Date().toLocaleDateString()}.json`
-    )
-  );
-
-  uploadFile({
-    filePath: path.resolve(
-      `output/wallet-list-${new Date().toLocaleDateString()}.json`
-    ),
-    fileName: `wallet-list-${new Date().toLocaleDateString()}.json`,
-  });
+ return {
+  groupedWallets,
+  walletSet,
+  sortedWallets,
+  lowWinLowPnlWallets,
+ }
 }
 
 export async function getLowWinLowPnl(wallets: {
-  [groupId: string]: string[];
+  [groupId: string]: string[];  
 }) {
   console.log("开始分析低胜率低盈利钱包");
 
@@ -317,6 +275,9 @@ export async function getLowWinLowPnl(wallets: {
       ) {
         lowWinLowPnlWallets.add(wallet);
       }
+      if (walletStats && walletStats.buy_times_7d + walletStats.sell_times_7d > 1400) {
+        lowWinLowPnlWallets.add(wallet);
+      }
       analysisProgress.increment();
     });
     await Promise.all(promises);
@@ -324,11 +285,6 @@ export async function getLowWinLowPnl(wallets: {
   }
 
   analysisProgress.stop();
-
-  fs.writeFileSync(
-    `output/low-win-low-pnl-wallets-${new Date().toLocaleDateString()}.json`,
-    JSON.stringify(Array.from(lowWinLowPnlWallets), null, 2)
-  );
 
   return lowWinLowPnlWallets;
 }

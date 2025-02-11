@@ -1,8 +1,8 @@
 const {google} = require('googleapis');
 const path = require('path');
-const fs = require('fs');
 
-export async function uploadFile({filePath, fileName}: {filePath: string, fileName: string}) {
+
+export async function uploadFile({data, fileName}: {data: any, fileName: string}) {
   try {
     // 认证
     const auth = new google.auth.GoogleAuth({
@@ -25,7 +25,7 @@ export async function uploadFile({filePath, fileName}: {filePath: string, fileNa
     // 媒体配置
     const media = {
       mimeType: 'application/json',
-      body: fs.createReadStream(filePath)
+      body: JSON.stringify(data)
     };
 
     // 执行上传

@@ -1,4 +1,4 @@
-import getCookie from "../util/getCookie";
+import request from "./request";
 
 export const getGroupHotToken = async (
   groupId: number,
@@ -8,15 +8,9 @@ export const getGroupHotToken = async (
   sortOrder: string = "desc",
   duration: string = "24H"
 ): Promise<GroupHotTokenResponse> => {
-  const response = await fetch(
-    `https://debot.ai/api/wallet/group/hot_token?group_id=${groupId}&page_index=${pageIndex}&page_size=${pageSize}&sort_field=${sortField}&sort_order=${sortOrder}&duration=${duration}`,
-    {
-      headers: {
-        Cookie: getCookie(),
-      },
-    }
+  return request(
+    `https://debot.ai/api/wallet/group/hot_token?group_id=${groupId}&page_index=${pageIndex}&page_size=${pageSize}&sort_field=${sortField}&sort_order=${sortOrder}&duration=${duration}`
   );
-  return response.json();
 };
 
 export type GroupHotTokenResponse = {

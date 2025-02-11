@@ -1,15 +1,11 @@
-import getCookie from "../util/getCookie";
+import request from "./request";
 
-export async function getWalletByGroup(groupId: number): Promise<WalletByGroupType> {
-  const response = await fetch(
-    `https://debot.ai/api/wallet/group/get?id=${groupId}&sort_field=pnl_percent_24h&sort_order=desc`,
-    {
-      headers: {
-        Cookie: getCookie(),
-      },
-    }
+export async function getWalletByGroup(
+  groupId: number
+): Promise<WalletByGroupType> {
+  return request(
+    `https://debot.ai/api/wallet/group/get?id=${groupId}&sort_field=pnl_percent_24h&sort_order=desc`
   );
-  return response.json();
 }
 export type WalletByGroupType = {
   data: {

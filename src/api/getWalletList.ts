@@ -1,4 +1,4 @@
-import getCookie from "../util/getCookie";
+import request from "./request";
 
 export const getWalletList = async (
   token: string,
@@ -6,15 +6,9 @@ export const getWalletList = async (
   sortField: string = "last_trade_time",
   sortOrder: string = "desc"
 ): Promise<WalletListResponse> => {
-  const response = await fetch(
-    `https://debot.ai/api/wallet/group/hot_token_wallets/details?token=${token}&chain=${chain}&sort_field=${sortField}&sort_order=${sortOrder}`,
-    {
-      headers: {
-        Cookie: getCookie(),
-      },
-    }
-  )
-  return response?.json();
+  return request(
+    `https://debot.ai/api/wallet/group/hot_token_wallets/details?token=${token}&chain=${chain}&sort_field=${sortField}&sort_order=${sortOrder}`
+  );
 };
 
 export type WalletListResponse = {
