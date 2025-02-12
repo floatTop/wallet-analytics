@@ -20,6 +20,7 @@ jobs:
           create_credentials_file: true  # 生成凭证文件
           workload_identity_provider: 'projects/538512390321/locations/global/workloadIdentityPools/updrive/providers/github'  # Workload Identity Federation 提供者
           service_account: 'googledrive@psyched-summer-450303-h3.iam.gserviceaccount.com'  # 这里使用服务帐号的完整名称
+          token_format: 'access_token'    # 添加此行以确保生成访问令牌
 
       - name: 'Set up gcloud'
         uses: google-github-actions/setup-gcloud@v1
