@@ -12,10 +12,13 @@ export async function uploadFile({
       scopes: ["https://www.googleapis.com/auth/drive.file"],
     });
     console.log("auth", auth);
+
+    const authClient = await auth.getClient();
+
     // 创建drive客户端
     const driveService = google.drive({
       version: "v3",
-      auth,
+      auth: authClient as any,
     });
 
     console.log("driveService");
