@@ -133,6 +133,7 @@ export async function analytics(isCron: boolean = false) {
           break;
         } catch (error) {
           if (isCron) {
+            console.log(wallet, "getWallet等待重试");
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
           if (i === 4) throw error;
@@ -163,6 +164,7 @@ export async function analytics(isCron: boolean = false) {
             break;
           } catch (error) {
             if (isCron) {
+              console.log(wallet, 'getBalance等待重试')
               await new Promise((resolve) => setTimeout(resolve, 1000));
             }
             if (i === 4) throw error;
@@ -291,6 +293,7 @@ export async function getLowWinLowPnl(
           break; // 成功获取数据后跳出循环
         } catch (error) {
           if (isCron) {
+            console.log(wallet, 'getLowWinLowPnl等待重试')
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
           console.log(error);
@@ -314,11 +317,7 @@ export async function getLowWinLowPnl(
     });
     await Promise.all(promises);
     if (isCron) {
-      console.log(
-        "Low Win Low Pnl Wallets Analysis",
-        i,
-        walletsArray.length
-      );
+      console.log("Low Win Low Pnl Wallets Analysis", i, walletsArray.length);
     }
     await new Promise((resolve) => setTimeout(resolve, isCron ? 6000 : 3000)); // 每次运行完暂停1s
   }
