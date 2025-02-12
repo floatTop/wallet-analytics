@@ -203,7 +203,7 @@ export async function analytics(isCron: boolean = false) {
     });
     await Promise.all(promises);
     if (isCron) {
-      console.log("Stupid Wallet Analysis", batch, stupidWallet);
+      console.log("Stupid Wallet Analysis", i, stupidWallet.length);
     }
     await new Promise((resolve) => setTimeout(resolve, isCron ? 3000 : 1000));
   }
@@ -316,7 +316,7 @@ export async function getLowWinLowPnl(
     if (isCron) {
       console.log(
         "Low Win Low Pnl Wallets Analysis",
-        batchSize,
+        i,
         walletsArray.length
       );
     }
