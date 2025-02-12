@@ -16,15 +16,15 @@ jobs:
       - name: Checkout 代码
         uses: actions/checkout@v2  # 获取代码
 
-      - name: Set up Google Cloud authentication
+      - name: Set up Google Cloud authentication 
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/${{ secrets.GCP_POOL_NAME }}/providers/${{ secrets.GCP_PROVIDER_NAME }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          audience: https://iam.googleapis.com/projects/${{ secrets.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/${{ secrets.GCP_POOL_NAME }}/providers/${{ secrets.GCP_PROVIDER_NAME }}
+          create_credentials_file: true  # 生成凭证文件
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          project_id: 'psyched-summer-450303-h3'
 
-      - name: List Google Cloud Storage buckets
-        run: gcloud storage buckets list
+      - name: 'Set up gcloud'
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: 设置 Node.js 环境
         uses: actions/setup-node@v3  # 设置 Node.js 环境
