@@ -7,7 +7,9 @@ import { getWalletGroup } from "@/api/getWalletGroup";
 import { getWalletList } from "@/api/getWalletList";
 import cliProgress from "@/util/cliProgress";
 
-export async function analytics() {
+const retryCount = 100;
+
+export async function analytics(isCron: boolean = false) {
   const progress = cliProgress("Analyzing Wallet");
   const signalList = await getSignalList();
   progress.start(Object.keys(signalList.meta.tokens).length, 0, {
@@ -33,17 +35,22 @@ export async function analytics() {
       const signal = signalList.meta.signals[token];
       const chain = element.chain;
       let walletList;
-      let retries = 3;
+      let retries = retryCount;
       while (retries > 0) {
         try {
           walletList = await getWalletList(token, chain);
           break; // 成功获取数据后跳出循环
         } catch (error) {
           retries--;
+          if (isCron) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
           if (retries === 0) {
             throw error;
           }
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // 等待1秒后重试
+          await new Promise((resolve) =>
+            setTimeout(resolve, isCron ? 3000 : 1000)
+          ); // 等待1秒后重试
         }
       }
       walletList?.data.forEach((wallet) => {
@@ -118,7 +125,22 @@ export async function analytics() {
   for (let i = 0; i < stupidWallet.length; i += batchSize) {
     const batch = stupidWallet.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
-      const { data: walletStats } = await getWallet(wallet);
+      let walletStats;
+      for (let i = 0; i < retryCount; i++) {
+        try {
+          const { data } = await getWallet(wallet);
+          walletStats = data;
+          break;
+        } catch (error) {
+          if (isCron) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+          if (i === 4) throw error;
+        }
+      }
+      if (!walletStats) {
+        return;
+      }
       if (
         walletStats.last_active_timestamp &&
         Date.now() / 1000 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60
@@ -140,6 +162,9 @@ export async function analytics() {
             balance = await getBalance(wallet);
             break;
           } catch (error) {
+            if (isCron) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
             if (i === 4) throw error;
           }
         }
@@ -177,6 +202,10 @@ export async function analytics() {
       stupidProgress.increment();
     });
     await Promise.all(promises);
+    if (isCron) {
+      console.log("Stupid Wallet Analysis", batch, stupidWallet);
+    }
+    await new Promise((resolve) => setTimeout(resolve, isCron ? 3000 : 1000));
   }
   stupidProgress.stop();
 
@@ -194,12 +223,10 @@ export async function analytics() {
   }
   allWalletProgress.stop();
 
-  await getLowWinLowPnl(wallets);
-
   const fileProgress = cliProgress("Writing Files");
   fileProgress.start(3, 0);
 
-  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
+  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets, isCron);
 
   for (const wallet of lowWinLowPnlWallets) {
     walletSet.set(wallet, "token胜率小于40%且7天收益小于20%");
@@ -230,17 +257,20 @@ export async function analytics() {
     }`
   );
 
- return {
-  groupedWallets,
-  walletSet,
-  sortedWallets,
-  lowWinLowPnlWallets,
- }
+  return {
+    groupedWallets,
+    walletSet,
+    sortedWallets,
+    lowWinLowPnlWallets,
+  };
 }
 
-export async function getLowWinLowPnl(wallets: {
-  [groupId: string]: string[];  
-}) {
+export async function getLowWinLowPnl(
+  wallets: {
+    [groupId: string]: string[];
+  },
+  isCron: boolean
+) {
   console.log("开始分析低胜率低盈利钱包");
 
   const lowWinLowPnlWallets = new Set<string>();
@@ -254,13 +284,15 @@ export async function getLowWinLowPnl(wallets: {
     const batch = walletsArray.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
       let walletStats;
-      for (let attempt = 0; attempt < 10; attempt++) {
+      for (let attempt = 0; attempt < retryCount; attempt++) {
         try {
           const { data } = await getWallet(wallet);
           walletStats = data;
           break; // 成功获取数据后跳出循环
         } catch (error) {
-          debugger;
+          if (isCron) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
           console.log(error);
           if (attempt === 4) throw error; // 最后一次重试失败则抛出错误
         }
@@ -272,13 +304,23 @@ export async function getLowWinLowPnl(wallets: {
       ) {
         lowWinLowPnlWallets.add(wallet);
       }
-      if (walletStats && walletStats.buy_times_7d + walletStats.sell_times_7d > 1400) {
+      if (
+        walletStats &&
+        walletStats.buy_times_7d + walletStats.sell_times_7d > 1400
+      ) {
         lowWinLowPnlWallets.add(wallet);
       }
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // 每次运行完暂停1s
+    if (isCron) {
+      console.log(
+        "Low Win Low Pnl Wallets Analysis",
+        batchSize,
+        walletsArray.length
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, isCron ? 6000 : 3000)); // 每次运行完暂停1s
   }
 
   analysisProgress.stop();
