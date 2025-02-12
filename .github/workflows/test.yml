@@ -18,7 +18,7 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           create_credentials_file: true  # 生成凭证文件
-          credentials_file: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
           project_id: 'psyched-summer-450303-h3'
 
       - name: 'Set up gcloud'
