@@ -14,14 +14,12 @@ jobs:
       - name: Checkout 代码
         uses: actions/checkout@v2  # 获取代码
 
-      - name: Set up Google Cloud authentication
+      - name: Set up Google Cloud authentication 
         uses: google-github-actions/auth@v1
         with:
           create_credentials_file: true  # 生成凭证文件
-          workload_identity_provider: 'projects/psyched-summer-450303-h3/locations/global/workloadIdentityPools/updrive/providers/github'  # Workload Identity Federation 提供者
-          service_account: 'zuoyong993@psyched-summer-450303-h3.iam.gserviceaccount.com'  # 这里使用服务帐号的完整名称
-          audience: 'https://iam.googleapis.com/projects/psyched-summer-450303-h3/locations/global/workloadIdentityPools/updrive/providers/github'  # 对应的受众
-          project_id: 'psyched-summer-450303-h3'  # 手动指定项目 ID
+          workload_identity_provider: 'projects/538512390321/locations/global/workloadIdentityPools/updrive/providers/github'  # Workload Identity Federation 提供者
+          service_account: 'googledrive@psyched-summer-450303-h3.iam.gserviceaccount.com'  # 这里使用服务帐号的完整名称
 
       - name: List Google Cloud Storage buckets
         run: gcloud storage buckets list
