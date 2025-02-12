@@ -277,7 +277,7 @@ export async function getLowWinLowPnl(
 
   const lowWinLowPnlWallets = new Set<string>();
   const walletsArray = Object.values(wallets).flat();
-  const batchSize = 100;
+  const batchSize = isCron ? 30 : 100;
 
   const analysisProgress = cliProgress("Low Win Low Pnl Wallets Analysis");
   analysisProgress.start(walletsArray.length, 0);
