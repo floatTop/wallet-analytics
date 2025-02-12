@@ -14,6 +14,7 @@ export async function uploadFile({
     console.log("auth", auth);
 
     const authClient = await auth.getClient();
+    console.log("authClient", authClient);
 
     // 创建drive客户端
     const driveService = google.drive({
