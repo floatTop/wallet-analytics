@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import path from "path";
 export async function uploadFile({
   data,
   fileName,
@@ -10,7 +9,6 @@ export async function uploadFile({
   try {
     // 认证
     const auth = new google.auth.GoogleAuth({
-      keyFile: path.join(__dirname, 'credentials.json'),
       scopes: ["https://www.googleapis.com/auth/drive.file"],
     });
     console.log("auth", auth);
