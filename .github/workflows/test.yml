@@ -24,10 +24,10 @@ jobs:
       - name: Set up Google Cloud authentication
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: projects/${{ secrets.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/${{ secrets.GCP_POOL_NAME }}/providers/${{ secrets.GCP_PROVIDER_NAME }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          audience: https://iam.googleapis.com/projects/${{ secrets.GCP_PROJECT_ID }}/locations/global/workloadIdentityPools/${{ secrets.GCP_POOL_NAME }}/providers/${{ secrets.GCP_PROVIDER_NAME }}
-
+          create_credentials_file: true
+          workload_identity_provider: 'projects/psyched-summer-450303-h3/locations/global/workloadIdentityPools/updrive/providers/github'
+          service_account: 'zuoyong993@gmail.com'
+          
       - name: List Google Cloud Storage buckets
         run: gcloud storage buckets list
 
