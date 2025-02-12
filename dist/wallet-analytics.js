@@ -1062,7 +1062,8 @@ var getWalletList = async (token, chain, sortField = "last_trade_time", sortOrde
 };
 
 // src/fun/analytics.ts
-async function analytics() {
+var retryCount = 100;
+async function analytics(isCron = false) {
   const progress = cliProgress("Analyzing Wallet");
   const signalList = await getSignalList();
   progress.start(Object.keys(signalList.meta.tokens).length, 0, {
@@ -1078,17 +1079,22 @@ async function analytics() {
       const signal = signalList.meta.signals[token];
       const chain = element.chain;
       let walletList;
-      let retries = 3;
+      let retries = retryCount;
       while (retries > 0) {
         try {
           walletList = await getWalletList(token, chain);
           break;
         } catch (error) {
           retries--;
+          if (isCron) {
+            await new Promise((resolve) => setTimeout(resolve, 1e3));
+          }
           if (retries === 0) {
             throw error;
           }
-          await new Promise((resolve) => setTimeout(resolve, 1e3));
+          await new Promise(
+            (resolve) => setTimeout(resolve, isCron ? 3e3 : 1e3)
+          );
         }
       }
       walletList?.data.forEach((wallet) => {
@@ -1150,7 +1156,23 @@ async function analytics() {
   for (let i = 0; i < stupidWallet.length; i += batchSize) {
     const batch = stupidWallet.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
-      const { data: walletStats } = await getWallet(wallet);
+      let walletStats;
+      for (let i2 = 0; i2 < retryCount; i2++) {
+        try {
+          const { data } = await getWallet(wallet);
+          walletStats = data;
+          break;
+        } catch (error) {
+          if (isCron) {
+            console.log(wallet, "getWallet\u7B49\u5F85\u91CD\u8BD5");
+            await new Promise((resolve) => setTimeout(resolve, 1e3));
+          }
+          if (i2 === 4) throw error;
+        }
+      }
+      if (!walletStats) {
+        return;
+      }
       if (walletStats.last_active_timestamp && Date.now() / 1e3 - walletStats.last_active_timestamp > 3 * 24 * 60 * 60) {
         walletSet.set(
           wallet,
@@ -1169,6 +1191,10 @@ async function analytics() {
             balance = await getBalance(wallet);
             break;
           } catch (error) {
+            if (isCron) {
+              console.log(wallet, "getBalance\u7B49\u5F85\u91CD\u8BD5");
+              await new Promise((resolve) => setTimeout(resolve, 1e3));
+            }
             if (i2 === 4) throw error;
           }
         }
@@ -1204,6 +1230,10 @@ async function analytics() {
       stupidProgress.increment();
     });
     await Promise.all(promises);
+    if (isCron) {
+      console.log("Stupid Wallet Analysis", i, stupidWallet.length);
+    }
+    await new Promise((resolve) => setTimeout(resolve, isCron ? 3e3 : 1e3));
   }
   stupidProgress.stop();
   const allWalletProgress = cliProgress("Get All Wallets");
@@ -1218,10 +1248,9 @@ async function analytics() {
     allWalletProgress.increment();
   }
   allWalletProgress.stop();
-  await getLowWinLowPnl(wallets);
   const fileProgress = cliProgress("Writing Files");
   fileProgress.start(3, 0);
-  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets);
+  const lowWinLowPnlWallets = await getLowWinLowPnl(wallets, isCron);
   for (const wallet of lowWinLowPnlWallets) {
     walletSet.set(wallet, "token\u80DC\u7387\u5C0F\u4E8E40%\u4E147\u5929\u6536\u76CA\u5C0F\u4E8E20%");
   }
@@ -1249,7 +1278,7 @@ async function analytics() {
     lowWinLowPnlWallets
   };
 }
-async function getLowWinLowPnl(wallets) {
+async function getLowWinLowPnl(wallets, isCron) {
   console.log("\u5F00\u59CB\u5206\u6790\u4F4E\u80DC\u7387\u4F4E\u76C8\u5229\u94B1\u5305");
   const lowWinLowPnlWallets = /* @__PURE__ */ new Set();
   const walletsArray = Object.values(wallets).flat();
@@ -1260,13 +1289,16 @@ async function getLowWinLowPnl(wallets) {
     const batch = walletsArray.slice(i, i + batchSize);
     const promises = batch.map(async (wallet) => {
       let walletStats;
-      for (let attempt = 0; attempt < 5; attempt++) {
+      for (let attempt = 0; attempt < retryCount; attempt++) {
         try {
           const { data } = await getWallet(wallet);
           walletStats = data;
           break;
         } catch (error) {
-          debugger;
+          if (isCron) {
+            console.log(wallet, "getLowWinLowPnl\u7B49\u5F85\u91CD\u8BD5");
+            await new Promise((resolve) => setTimeout(resolve, 1e3));
+          }
           console.log(error);
           if (attempt === 4) throw error;
         }
@@ -1280,7 +1312,10 @@ async function getLowWinLowPnl(wallets) {
       analysisProgress.increment();
     });
     await Promise.all(promises);
-    await new Promise((resolve) => setTimeout(resolve, 3e3));
+    if (isCron) {
+      console.log("Low Win Low Pnl Wallets Analysis", i, walletsArray.length);
+    }
+    await new Promise((resolve) => setTimeout(resolve, isCron ? 6e3 : 3e3));
   }
   analysisProgress.stop();
   return lowWinLowPnlWallets;
