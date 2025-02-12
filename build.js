@@ -6,8 +6,8 @@ const buildOptions = [
     outfile: "dist/wallet-analytics.js",
   },
   {
-    entryPoints: ["src/dune.ts"],
-    outfile: "dist/dune.js",
+    entryPoints: ["src/test.ts"],
+    outfile: "dist/test.js",
   },
   {
     entryPoints: ["src/cron.ts"],
