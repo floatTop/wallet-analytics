@@ -1,7 +1,7 @@
 import request from "./request";
 
-export async function getWallet(wallet: string): Promise<WalletStats> {
-  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`;
+export async function getWallet(wallet: string, chain: string): Promise<WalletStats> {
+  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=${chain}&wallet=${wallet}&duration=7D`;
 
   return request(url);
 }

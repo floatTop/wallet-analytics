@@ -4,9 +4,6 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "rootDir": "./",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

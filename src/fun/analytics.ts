@@ -1,11 +1,11 @@
-import { getBalance } from "@/api/getBalanace";
-import { getHolding } from "@/api/getHolding";
-import { getSignalList } from "@/api/getSignalList";
-import { getWallet } from "@/api/getWallet";
-import { getWalletByGroup } from "@/api/getWalletByGroup";
-import { getWalletGroup } from "@/api/getWalletGroup";
-import { getWalletList } from "@/api/getWalletList";
-import cliProgress from "@/util/cliProgress";
+import { getBalance } from "../api/getBalanace";
+import { getHolding } from "../api/getHolding";
+import { getSignalList } from "../api/getSignalList";
+import { getWallet } from "../api/getWallet";
+import { getWalletByGroup } from "../api/getWalletByGroup";
+import { getWalletGroup } from "../api/getWalletGroup";
+import { getWalletList } from "../api/getWalletList";
+import cliProgress from "../util/cliProgress";
 
 const retryCount = 100;
 
@@ -113,7 +113,7 @@ export async function analytics(isCron: boolean = false) {
     }, {} as Record<string, any>);
 
   const stupidWallet = Object.keys(sortedWallets).filter(
-    (wallet) => sortedWallets[wallet].stupidDoubleRatio === 1
+    (wallet) => sortedWallets[wallet]
   );
   progress.stop();
 
@@ -128,7 +128,7 @@ export async function analytics(isCron: boolean = false) {
       let walletStats;
       for (let i = 0; i < retryCount; i++) {
         try {
-          const { data } = await getWallet(wallet);
+          const { data } = await getWallet(wallet, "solana");
           walletStats = data;
           break;
         } catch (error) {
@@ -188,7 +188,7 @@ export async function analytics(isCron: boolean = false) {
           if (holding) {
             const solBalance = holding.data.holding_tokens.reduce(
               (acc: number, token: any) => {
-                if (token.token.symbol === "SOL") {
+                if (token.balance) {
                   acc += token.balance;
                 }
                 return acc;
@@ -229,6 +229,10 @@ export async function analytics(isCron: boolean = false) {
   fileProgress.start(3, 0);
 
   const lowWinLowPnlWallets = await getLowWinLowPnl(wallets, isCron);
+
+  console.log('--------------------------------')
+  console.log(wallets)
+  console.log('--------------------------------')
 
   for (const wallet of lowWinLowPnlWallets) {
     walletSet.set(wallet, "token胜率小于40%且7天收益小于20%");
@@ -288,7 +292,7 @@ export async function getLowWinLowPnl(
       let walletStats;
       for (let attempt = 0; attempt < retryCount; attempt++) {
         try {
-          const { data } = await getWallet(wallet);
+          const { data } = await getWallet(wallet, "solana");
           walletStats = data;
           break; // 成功获取数据后跳出循环
         } catch (error) {

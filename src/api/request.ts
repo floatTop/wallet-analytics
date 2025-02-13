@@ -1,4 +1,4 @@
-import getCookie from "@/util/getCookie";
+import getCookie from "../util/getCookie";
 
 const cache = new Map<string, Promise<any>>();
 
@@ -13,8 +13,11 @@ export default function request(url: string, init?: RequestInit) {
       Cookie: getCookie(),
       ...init?.headers,
     },
-  }).then((res) => res.json());
-  cache.set(url, promise);
+  }).then((res) => res.json()).then((res) => {
+    cache.set(url, res);
+    return res;
+  });
+
 
   return promise;
 }

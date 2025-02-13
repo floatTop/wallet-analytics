@@ -13,6 +13,10 @@ const buildOptions = [
     entryPoints: ["src/cron.ts"],
     outfile: "dist/cron.js",
   },
+  {
+    entryPoints: ["src/bnb-wallet-analytics.ts"],
+    outfile: "dist/bnb-wallet-analytics.js",
+  },
 ];
 
 buildOptions.forEach((options) => {

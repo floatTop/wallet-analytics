@@ -920,8 +920,10 @@ function request(url, init) {
       Cookie: getCookie(),
       ...init?.headers
     }
-  }).then((res) => res.json());
-  cache.set(url, promise);
+  }).then((res) => res.json()).then((res) => {
+    cache.set(url, res);
+    return res;
+  });
   return promise;
 }
 
@@ -1037,8 +1039,8 @@ async function getSignalList() {
 }
 
 // src/api/getWallet.ts
-async function getWallet(wallet) {
-  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=solana&wallet=${wallet}&duration=7D`;
+async function getWallet(wallet, chain) {
+  const url = `https://debot.ai/api/dashboard/wallet/market/stats?chain=${chain}&wallet=${wallet}&duration=7D`;
   return request(url);
 }
 
@@ -1146,7 +1148,7 @@ async function analytics(isCron = false) {
     return acc;
   }, {});
   const stupidWallet = Object.keys(sortedWallets).filter(
-    (wallet) => sortedWallets[wallet].stupidDoubleRatio === 1
+    (wallet) => sortedWallets[wallet]
   );
   progress.stop();
   const walletSet = /* @__PURE__ */ new Map();
@@ -1159,7 +1161,7 @@ async function analytics(isCron = false) {
       let walletStats;
       for (let i2 = 0; i2 < retryCount; i2++) {
         try {
-          const { data } = await getWallet(wallet);
+          const { data } = await getWallet(wallet, "solana");
           walletStats = data;
           break;
         } catch (error) {
@@ -1214,7 +1216,7 @@ async function analytics(isCron = false) {
           if (holding) {
             const solBalance = holding.data.holding_tokens.reduce(
               (acc, token) => {
-                if (token.token.symbol === "SOL") {
+                if (token.balance) {
                   acc += token.balance;
                 }
                 return acc;
@@ -1251,6 +1253,9 @@ async function analytics(isCron = false) {
   const fileProgress = cliProgress("Writing Files");
   fileProgress.start(3, 0);
   const lowWinLowPnlWallets = await getLowWinLowPnl(wallets, isCron);
+  console.log("--------------------------------");
+  console.log(wallets);
+  console.log("--------------------------------");
   for (const wallet of lowWinLowPnlWallets) {
     walletSet.set(wallet, "token\u80DC\u7387\u5C0F\u4E8E40%\u4E147\u5929\u6536\u76CA\u5C0F\u4E8E20%");
   }
@@ -1282,7 +1287,7 @@ async function getLowWinLowPnl(wallets, isCron) {
   console.log("\u5F00\u59CB\u5206\u6790\u4F4E\u80DC\u7387\u4F4E\u76C8\u5229\u94B1\u5305");
   const lowWinLowPnlWallets = /* @__PURE__ */ new Set();
   const walletsArray = Object.values(wallets).flat();
-  const batchSize = 100;
+  const batchSize = isCron ? 30 : 100;
   const analysisProgress = cliProgress("Low Win Low Pnl Wallets Analysis");
   analysisProgress.start(walletsArray.length, 0);
   for (let i = 0; i < walletsArray.length; i += batchSize) {
@@ -1291,7 +1296,7 @@ async function getLowWinLowPnl(wallets, isCron) {
       let walletStats;
       for (let attempt = 0; attempt < retryCount; attempt++) {
         try {
-          const { data } = await getWallet(wallet);
+          const { data } = await getWallet(wallet, "solana");
           walletStats = data;
           break;
         } catch (error) {

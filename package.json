@@ -15,6 +15,7 @@
 		"unbuild": "^3.3.1"
 	},
 	"scripts": {
+		"bnbAnalytics": "ts-node ./src/bnb-wallet-analytics.ts",
 		"analytics": "ts-node ./src/wallet-analytics.ts",
 		"signal": "ts-node ./src/token-heatmap.ts",
 		"test": "ts-node ./src/test.ts",
@@ -24,6 +25,7 @@
 		"cron": "ts-node ./src/cron.ts"
 	},
 	"dependencies": {
+		"@duneanalytics/client-sdk": "^0.2.5",
 		"@google-cloud/local-auth": "^3.0.1",
 		"@solana/web3.js": "^1.98.0",
 		"cli-progress": "^3.12.0",
