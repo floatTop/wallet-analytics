@@ -287,7 +287,7 @@ export async function getLowWinLowPnl(
   analysisProgress.start(walletsArray.length, 0);
 
   for (let i = 0; i < walletsArray.length; i += batchSize) {
-    const batch = walletsArray.slice(i, i + batchSize);
+    const batch = walletsArray.slice(i, i + batchSize).filter(wallet => !wallet.startsWith('0x'));
     const promises = batch.map(async (wallet) => {
       let walletStats;
       for (let attempt = 0; attempt < retryCount; attempt++) {
