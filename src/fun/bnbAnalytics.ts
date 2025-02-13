@@ -6,12 +6,14 @@ import cliProgress from "../util/cliProgress";
 
 export default async function bnbAnalytics() {
   const data1 = fs.readFileSync("files/1.txt", "utf8");
-  // const data2 = fs.readFileSync("files/2.txt", "utf8");
-  // const data3 = fs.readFileSync("files/3.txt", "utf8");
+  const data2 = fs.readFileSync("files/2.txt", "utf8");
+  const data3 = fs.readFileSync("files/3.txt", "utf8");
+  const data4 = fs.readFileSync("files/4.txt", "utf8");
   const jsonData = data1.split("\n");
-  // const jsonData2 = data2.split("\n");
-  // const jsonData3 = data3.split("\n");
-  const wallets = [...jsonData];
+  const jsonData2 = data2.split("\n");
+  const jsonData3 = data3.split("\n");
+  const jsonData4 = data4.split("\n");
+  const wallets = [...jsonData, ...jsonData2, ...jsonData3, ...jsonData4];
   const walletSet = new Set(wallets.map((wallet) => wallet.trim()));
 
   console.log(walletSet.size);

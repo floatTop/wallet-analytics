@@ -1,5 +1,6 @@
 import fs from 'fs';
 import bnbAnalytics from "./fun/bnbAnalytics";
+import { uploadFile } from './util/upload';
 
 
 bnbAnalytics().then((wallets) => {
