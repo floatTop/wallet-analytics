@@ -22,6 +22,7 @@ export default async function bnbAnalytics() {
 
   const concurrencyLimit = 20;
   const walletArray = new Set();
+  const firstWallet = new Set();
   const walletList = Array.from(walletSet);
   let index = 0;
 
@@ -29,7 +30,7 @@ export default async function bnbAnalytics() {
     while (index < walletList.length) {
       const wallet = walletList[index++];
       const { data } = await getWallet(wallet, "bsc");
-      console.log(data);
+      console.log(index, walletList.length);
       if (data.buy_times_7d + data.sell_times_7d > 1500) {
         continue;
       }
@@ -51,6 +52,8 @@ export default async function bnbAnalytics() {
       if (data.pnl_7d < 0.1) {
         continue;
       }
+
+      firstWallet.add(wallet);
 
       const balance = await getBnbBalance(wallet);
       if (balance < 0.001) {
@@ -92,7 +95,14 @@ export default async function bnbAnalytics() {
   const tasks = Array.from({ length: concurrencyLimit }, () => processWallet());
   await Promise.all(tasks);
 
-  console.log(walletArray.size);
+  console.log(walletArray.size, firstWallet.size);
+
+  const diffWallets1 = new Set([...walletArray].filter(wallet => !firstWallet.has(wallet)));
+  const diffWallets2 = new Set([...firstWallet].filter(wallet => !walletArray.has(wallet)));
+  console.log("Difference between walletArray and firstWallet:", diffWallets1);
+  console.log("Difference between firstWallet and walletArray:", diffWallets2);
+
+  
 
   return Array.from(walletArray);
 }
