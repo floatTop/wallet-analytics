@@ -1,8 +1,6 @@
-name: 定时运行 JavaScript 文件
+name: 定时运行 bnb 钱包分析 
 
 on:
-  schedule:
-    - cron: '0 22 * * *'  # 每天午夜 12 点执行 (可以根据需要修改时间)
   workflow_dispatch:  # 允许手动触发工作流
 
 jobs:
