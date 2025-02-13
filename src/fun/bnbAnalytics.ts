@@ -29,6 +29,7 @@ export default async function bnbAnalytics() {
     while (index < walletList.length) {
       const wallet = walletList[index++];
       const { data } = await getWallet(wallet, "bsc");
+      console.log(data);
       if (data.buy_times_7d + data.sell_times_7d > 1500) {
         continue;
       }
@@ -52,7 +53,7 @@ export default async function bnbAnalytics() {
       }
 
       const balance = await getBnbBalance(wallet);
-      if (balance !== 0) {
+      if (balance < 0.001) {
         continue;
       }
       let holding;
@@ -78,7 +79,7 @@ export default async function bnbAnalytics() {
           },
           0
         );
-        if (balance + holdingBalance < 0.01) {
+        if (balance + holdingBalance < 0.001) {
           continue;
         }
       }
