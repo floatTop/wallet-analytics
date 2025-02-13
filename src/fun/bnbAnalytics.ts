@@ -51,10 +51,6 @@ export default async function bnbAnalytics() {
         continue;
       }
 
-      walletArray.add(data);
-      progress.increment();
-      continue;
-
       const balance = await getBnbBalance(wallet);
       if (balance !== 0) {
         continue;
@@ -86,6 +82,9 @@ export default async function bnbAnalytics() {
           continue;
         }
       }
+
+      walletArray.add(wallet);
+      progress.increment();
     }
   }
 
