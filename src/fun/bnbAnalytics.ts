@@ -60,7 +60,9 @@ export default async function bnbAnalytics() {
       firstWallet.add(wallet);
 
       const balance = await getBnbBalance(wallet);
-      if (balance < 0.001) {
+      if (balance > 0.001) {
+        walletArray.add(wallet);
+        progress.increment();
         continue;
       }
       let holding;
