@@ -28,6 +28,10 @@ export default async function bnbAnalytics() {
 
   async function processWallet() {
     while (index < walletList.length) {
+      if (index % 20 === 0 && index > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+
       const wallet = walletList[index++];
       const { data } = await getWallet(wallet, "bsc");
       console.log(index, walletList.length);
@@ -97,12 +101,14 @@ export default async function bnbAnalytics() {
 
   console.log(walletArray.size, firstWallet.size);
 
-  const diffWallets1 = new Set([...walletArray].filter(wallet => !firstWallet.has(wallet)));
-  const diffWallets2 = new Set([...firstWallet].filter(wallet => !walletArray.has(wallet)));
+  const diffWallets1 = new Set(
+    [...walletArray].filter((wallet) => !firstWallet.has(wallet))
+  );
+  const diffWallets2 = new Set(
+    [...firstWallet].filter((wallet) => !walletArray.has(wallet))
+  );
   console.log("Difference between walletArray and firstWallet:", diffWallets1);
   console.log("Difference between firstWallet and walletArray:", diffWallets2);
-
-  
 
   return Array.from(walletArray);
 }
